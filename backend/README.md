@@ -54,11 +54,31 @@ uv run scripts/ingest_data.py
 ### 3. Running Tests
 Tests are built with `pytest`.
 ```bash
+# Unit tests + API Mock tests
 docker exec -it music_discovery_api uv run pytest tests/
 ```
+
+## 🏗️ Architecture
+The backend is structured vertically by domain:
+- `app/routers`: API Endpoints (Controllers).
+- `app/services`: Business Logic & DB Interactions.
+- `app/schemas`: Pydantic Models (DTOs).
+- `app/dependencies`: Dependency Injection (DB Pool).
+
+## 🔌 API Endpoints
+### Search
+- **GET /search?q=...**
+  - Fuzzy text search for tracks by name or artist.
+  - Returns: List of tracks.
+
+### Recommendations
+- **POST /recommend**
+  - Body: `{ "track_id": "...", "limit": 10 }`
+  - Uses vector similarity (HNSW index) to find nearest neighbors.
+  - Returns: List of similar tracks.
 
 ## 📂 Project Structure
 - `/app`: FastAPI application source code.
 - `/scripts`: Data engineering tasks (Ingestion, ETL).
-- `/tests`: Pytest suite.
+- `/tests`: Pytest suite (Unit & Mock Integration).
 - `pyproject.toml`: Modern Python dependency configuration.
