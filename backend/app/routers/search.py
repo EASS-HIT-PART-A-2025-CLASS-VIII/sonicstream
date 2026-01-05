@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 import psycopg
 from typing import List
 
-from app.schemas import SearchResponse
+from app.schemas import SearchResponse, Track
 from app.dependencies import get_db
 from app.services.search import SearchService
 

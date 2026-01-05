@@ -14,7 +14,7 @@ def read_sqlite_data():
     print(f"📂 Connecting to SQLite: {SQLITE_DB_PATH}...")
     
     if not os.path.exists(SQLITE_DB_PATH):
-        raise FileNotFoundError(f"❌ Could not find {SQLITE_DB_PATH}")
+        raise FileNotFoundError(f"❌ Could not find {SQLITE_DB_PATH}. Please download it (check README.md) and place it in the backend/ directory.")
 
     conn = sqlite3.connect(SQLITE_DB_PATH)
     
@@ -29,6 +29,9 @@ def read_sqlite_data():
     # artists(id, name)
     
     # Note: We take the first artist for simplicity if multiple exist
+    # FULL FIDELITY QUERY
+    # Joins Tracks, Artists, and Audio Features for complete data.
+    # Note: This might take 1-2 minutes to start streaming due to the large JOIN.
     query = """
     SELECT 
         t.id as track_id,
@@ -48,40 +51,38 @@ def read_sqlite_data():
     
     print("⚡ Reading data from SQLite (fetching via cursor for safe encoding)...")
     
-    try:
-        cursor = conn.cursor()
-        cursor.execute(query)
-        
     # Instead of loading everything into memory (8M is too big for simple lists), 
     # we will stream: SQLite -> Chunk -> Polars -> Insert -> Repeat
     
-    print("⚡ Streaming data from SQLite...")
+    print("⚡ Streaming data from SQLite (Querying 8M rows with JOINs, please wait)...")
     cursor = conn.cursor()
-    cursor.execute(query)
     
-    columns = ["track_id", "name", "artist", "danceability", "energy", "valence", "tempo", "acousticness"]
-    BATCH_SIZE = 50000
-    total_processed = 0
-    
-    while True:
-        rows = cursor.fetchmany(BATCH_SIZE)
-        if not rows:
-            break
+    try:
+        cursor.execute(query)
+        
+        columns = ["track_id", "name", "artist", "danceability", "energy", "valence", "tempo", "acousticness"]
+        BATCH_SIZE = 10000
+        total_processed = 0
+        
+        while True:
+            rows = cursor.fetchmany(BATCH_SIZE)
+            if not rows:
+                break
+                
+            # Create small DF for transformation
+            df_chunk = pl.DataFrame(rows, schema=columns, orient="row")
             
-        # Create small DF for transformation
-        df_chunk = pl.DataFrame(rows, schema=columns, orient="row")
-        
-        # Transform
-        df_clean = transform_data(df_chunk)
-        
-        # Insert (We call insert_data per chunk)
-        # Note: insert_data prints "Starting DB Insert" each time, which is noisy but fine.
-        insert_data(df_clean)
-        
-        total_processed += len(rows)
-        print(f"   🚀 Processed total: {total_processed} rows...")
+            # Transform
+            df_clean = transform_data(df_chunk)
+            
+            # Insert (We call insert_data per chunk)
+            insert_data(df_clean)
+            
+            total_processed += len(rows)
+            print(f"   🚀 Processed total: {total_processed} rows...")
 
-    conn.close()
+    finally:
+        conn.close()
 
 def transform_data(df: pl.DataFrame):
     """

@@ -1,31 +1,24 @@
-# Dependencies
-node_modules/
-.venv/
-venv/
+# Python
 __pycache__/
-
-# Build outputs
-dist/
-build/
-out/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+env/
+venv/
 
 # Environment variables
 .env
-.env.local
-.env.*.local
 
-# OS files
-.DS_Store
-Thumbs.db
+# Database
+spotify.sqlite
+*.sqlite
+*.db
+backend/spotify.sqlite
 
-# IDEs
+# IDE
 .vscode/
 .idea/
 
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pytest_cache/
-coverage/
+# Mac
+.DS_Store

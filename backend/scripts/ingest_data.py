@@ -156,7 +156,7 @@ def insert_data(df: pl.DataFrame):
     rows = df.iter_rows(named=True)
     
     count = 0
-    BATCH_SIZE = 100000
+    BATCH_SIZE = 10000
     
     with get_db_connection() as conn:
         with conn.cursor() as cur:

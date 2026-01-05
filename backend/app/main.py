@@ -18,7 +18,8 @@ app = FastAPI(
     title="Music Discovery API",
     description="Professional Music Recommendation Engine",
     version="0.1.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    debug=True # Enable debug tracebacks for development
 )
 
 app.include_router(search.router)

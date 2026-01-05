@@ -74,7 +74,19 @@ We utilize a cutting-edge stack designed for massive scalability, type safety, a
 *   Node.js v20+ (LTS)
 *   Python 3.11+
 
+
 ### Quick Start
+
+### 📦 Data Setup (IMPORTANT)
+The project relies on a large SQLite dataset that is not stored in git.
+1.  **Download** `spotify.sqlite` from: [INSERT_LINK_HERE] (Ask team for link)
+2.  **Place** the file in the `backend/` directory:
+    ```
+    backend/spotify.sqlite
+    ```
+
+### Running the App
+
 ```bash
 # 1. Clone the repository
 git clone https://github.com/your-org/music-discovery.git
