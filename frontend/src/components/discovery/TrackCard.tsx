@@ -4,12 +4,14 @@ import { Play, Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Track } from "@/lib/mockData";
+import { useFavorites } from "@/lib/favorites";
 
 interface TrackCardProps {
     track: Track;
 }
 
 export default function TrackCard({ track }: TrackCardProps) {
+    const { isFavorite, toggleFavorite } = useFavorites();
     return (
         <div className="group relative bg-[#181818] p-4 rounded-xl hover:bg-[#282828] transition-all duration-300 cursor-pointer">
             <Link href={`/track/${track.id}`}>
@@ -40,8 +42,15 @@ export default function TrackCard({ track }: TrackCardProps) {
                 <p className="text-sm text-[#a7a7a7] truncate">{track.artist}</p>
                 <div className="flex items-center justify-between pt-2">
                     <span className="text-xs text-[#a7a7a7]">{track.genre}</span>
-                    <button className="text-[#a7a7a7] hover:text-white transition-colors">
-                        <Heart className="h-4 w-4" />
+                    <button
+                        className={`transition-colors ${isFavorite(track.id) ? 'text-primary' : 'text-[#a7a7a7] hover:text-white'
+                            }`}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            toggleFavorite(track);
+                        }}
+                    >
+                        <Heart className={`h-4 w-4 ${isFavorite(track.id) ? 'fill-primary' : ''}`} />
                     </button>
                 </div>
             </div>
