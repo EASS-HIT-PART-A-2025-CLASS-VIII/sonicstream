@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+env/
+venv/
+
+# Environment variables
+.env
+
+# Database
+spotify.sqlite
+*.sqlite
+*.db
+backend/spotify.sqlite
+
+# IDE
+.vscode/
+.idea/
+
+# Mac
+.DS_Store

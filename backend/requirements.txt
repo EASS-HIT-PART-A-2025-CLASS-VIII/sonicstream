@@ -1,0 +1,11 @@
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+polars>=0.20.5
+psycopg[binary,pool]>=3.1.18
+pgvector>=0.2.4
+python-dotenv>=1.0.1
+kaggle>=1.6.3
+numpy>=1.26.3
+scikit-learn>=1.4.0
+pytest>=8.0.0
+httpx>=0.26.0
