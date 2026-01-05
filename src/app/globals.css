@@ -1,0 +1,48 @@
+:root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --primary: #1ed760;
+  --primary-hover: #1fdf64;
+  --surface: #121212;
+  --surface-hover: #1a1a1a;
+  --border: #282828;
+  --card-bg: #181818;
+  --text-secondary: #a7a7a7;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+h1, h2, h3 {
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+/* Premium Scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 6px;
+  border: 3px solid var(--background);
+}
