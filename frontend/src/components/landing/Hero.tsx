@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { PlayCircle, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export default function Hero() {
     return (
@@ -35,14 +36,18 @@ export default function Hero() {
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Button size="lg" className="h-14 px-8 rounded-full bg-primary text-black hover:bg-primary/90 text-lg font-bold group">
-                            Start Listening
-                            <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                        </Button>
-                        <Button size="lg" variant="outline" className="h-14 px-8 rounded-full border-white/10 hover:bg-white/5 text-lg">
-                            <PlayCircle className="mr-2 h-5 w-5" />
-                            View Demo
-                        </Button>
+                        <Link href="/dashboard">
+                            <Button size="lg" className="h-14 px-8 rounded-full bg-primary text-black hover:bg-primary/90 text-lg font-bold group">
+                                Start Listening
+                                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+                        </Link>
+                        <Link href="/discovery">
+                            <Button size="lg" variant="outline" className="h-14 px-8 rounded-full border-white/10 hover:bg-white/5 text-lg">
+                                <PlayCircle className="mr-2 h-5 w-5" />
+                                View Demo
+                            </Button>
+                        </Link>
                     </div>
                 </motion.div>
             </div>
