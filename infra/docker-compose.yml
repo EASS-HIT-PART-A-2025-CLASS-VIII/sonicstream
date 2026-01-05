@@ -19,6 +19,28 @@ services:
       timeout: 5s
       retries: 5
 
+  backend:
+    build: 
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: music_discovery_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-admin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-admin}
+      - POSTGRES_DB=${POSTGRES_DB:-music_discovery}
+      - POSTGRES_HOST=db
+      - KAGGLE_USERNAME=${KAGGLE_USERNAME}
+      - KAGGLE_KEY=${KAGGLE_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
   redis:
     image: redis:alpine
     container_name: music_discovery_redis
