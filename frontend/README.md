@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SonicStream - Premium Music Discovery Frontend
 
-## Getting Started
+## 🎵 Overview
+This directory contains the features for the **SonicStream** music discovery platform. It is built with a focus on high-performance rendering, a premium dark-mode aesthetic, and fluid animations.
 
-First, run the development server:
+## 🛠️ Tech Stack
+*   **Framework**: [Next.js 14](https://nextjs.org/) (App Router, TypeScript)
+*   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+*   **Component Library**: [Shadcn/UI](https://ui.shadcn.com/) (Radix UI primitives)
+*   **Animations**: [Framer Motion](https://www.framer.com/motion/)
+*   **Icons**: [Lucide React](https://lucide.dev/)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ Key Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 1. Premium Design System
+*   **Dark Mode Core**: The UI is built on a strict dark background (`#0a0a0a`) to make content pop.
+*   **Neon Accents**: Uses a signature Neon Green (`#1ed760`) for primary actions and energetic highlights.
+*   **Glassmorphism**: Navbar and cards utilize backdrop blurs (`backdrop-blur-md`) for a modern, layered feel.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Core Components
+*   **`Navbar.tsx`**: A sticky, glass-effect navigation bar with a responsive layout and animated logo.
+*   **`Hero.tsx`**: The landing page centerpiece, featuring:
+    *   Animated entry sequences (fade-in, slide-up).
+    *   Dynamic gradient text.
+    *   Ambient background "blob" effects.
+*   **`Features.tsx`**: A responsive grid layout displaying value propositions with hover-reactive cards.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. Architecture
+*   **`layout.tsx`**: Enforces the dark theme and font (Inter) globally.
+*   **`globals.css`**: Defines CSS variables for Shadcn/UI and custom scrollbar styles for a polished feel.
 
-## Learn More
+## 🚀 Getting Started
 
-To learn more about Next.js, take a look at the following resources:
+### Prerequisites
+*   Node.js v18+
+*   npm
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Installation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1.  **Navigate to the frontend directory:**
+    ```bash
+    cd frontend
+    ```
 
-## Deploy on Vercel
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3.  **Run the development server:**
+    ```bash
+    npm run dev
+    ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4.  **Open the app:**
+    Visit [http://localhost:3000](http://localhost:3000) to see the application.
+
+## 🤝 Contributing
+*   **Components**: Place reusable UI elements in `src/components/ui`.
+*   **Layouts**: Feature-specific layouts go in `src/components/layout`.
+*   **Pages**: routing handles by `src/app`.
