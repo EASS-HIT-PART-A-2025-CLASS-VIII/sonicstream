@@ -156,34 +156,57 @@ def insert_data(df: pl.DataFrame):
     rows = df.iter_rows(named=True)
     
     count = 0
+    BATCH_SIZE = 100000
+    
     with get_db_connection() as conn:
         with conn.cursor() as cur:
-            with cur.copy("COPY tracks (track_id, name, artist, danceability, energy, valence, tempo, acousticness, audio_embedding) FROM STDIN") as copy:
-                for row in rows:
-                    # Construct vector
-                    embedding = [
-                        row["danceability"],
-                        row["energy"],
-                        row["valence"],
-                        row["tempo_norm"],
-                        row["acousticness"]
-                    ]
-                    
-                    copy.write_row((
-                        row["track_id"],
-                        row["name"],
-                        row["artist"],
-                        row["danceability"],
-                        row["energy"],
-                        row["valence"],
-                        row["tempo"], # Original tempo
-                        row["acousticness"],
-                        embedding
-                    ))
-                    count += 1
-                    if count % 100000 == 0:
-                        print(f"   Inserted {count} rows...")
-                        
+            # We must use a loop of COPY commands or handle transactions manually to allow reading mid-process
+            # However, COPY is atomic. To allow reading "steps", we need to run multiple COPY commands.
+            # But iterating python rows -> multiple COPY calls is complex with existing generator logic.
+            # Easiest way: Use normal INSERTs for the first batch? No, too slow.
+            
+            # Better strategy: We can't break "one COPY" easily into commits without restarting the copy.
+            # So code below changes to: Accumulate a batch, write it via COPY, commit, repeat.
+            pass
+            
+            # Re-implementing loop for Batched COPY
+            batch_buffer = []
+            
+            print(f"🔄 Starting Batched Insert (Commit every {BATCH_SIZE} rows)...")
+            
+            for row in rows:
+                # pgvector expects '[1.0,2.0,3.0]' string format for COPY
+                embedding_str = str(embedding)
+                
+                batch_buffer.append((
+                   row["track_id"],
+                    row["name"],
+                    row["artist"],
+                    row["danceability"],
+                    row["energy"],
+                    row["valence"],
+                    row["tempo"], 
+                    row["acousticness"],
+                    embedding_str
+                ))
+                
+                if len(batch_buffer) >= BATCH_SIZE:
+                    with cur.copy("COPY tracks (track_id, name, artist, danceability, energy, valence, tempo, acousticness, audio_embedding) FROM STDIN") as copy:
+                        for item in batch_buffer:
+                            copy.write_row(item)
+                    conn.commit() # <--- Commit this batch so it's visible!
+                    count += len(batch_buffer)
+                    print(f"   ✅ Committed {count} rows...")
+                    batch_buffer = []
+
+            # Insert remaining
+            if batch_buffer:
+                with cur.copy("COPY tracks (track_id, name, artist, danceability, energy, valence, tempo, acousticness, audio_embedding) FROM STDIN") as copy:
+                        for item in batch_buffer:
+                            copy.write_row(item)
+                conn.commit()
+                count += len(batch_buffer)
+
     print(f"✅ Insertion Complete. Total: {count}")
 
 if __name__ == "__main__":

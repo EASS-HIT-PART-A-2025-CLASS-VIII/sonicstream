@@ -20,3 +20,33 @@ async def search_tracks(
     service = SearchService(db)
     results = await service.search_tracks(q, limit)
     return SearchResponse(results=results)
+
+@router.get("/debug/tracks", response_model=SearchResponse)
+async def get_debug_tracks(
+    limit: int = 10,
+    db: psycopg.AsyncConnection = Depends(get_db)
+):
+    """
+    DEBUG: Get random tracks to verify database content.
+    """
+    async with db.cursor() as cur:
+        await cur.execute("""
+            SELECT track_id, name, artist, danceability, energy, valence, tempo, acousticness
+            FROM tracks
+            LIMIT %s
+        """, (limit,))
+        rows = await cur.fetchall()
+        
+        tracks = [
+            Track(
+                track_id=row[0],
+                name=row[1],
+                artist=row[2],
+                danceability=row[3],
+                energy=row[4],
+                valence=row[5],
+                tempo=row[6],
+                acousticness=row[7]
+            ) for row in rows
+        ]
+        return SearchResponse(results=tracks)
