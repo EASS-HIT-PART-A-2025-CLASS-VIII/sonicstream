@@ -3,7 +3,7 @@
 import { Play, Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Track } from "@/lib/mockData";
+import { Track } from "@/lib/api";
 import { useFavorites } from "@/lib/favorites";
 
 interface TrackCardProps {
@@ -12,12 +12,31 @@ interface TrackCardProps {
 
 export default function TrackCard({ track }: TrackCardProps) {
     const { isFavorite, toggleFavorite } = useFavorites();
+
+    // Convert API Track to the format useFavorites expects
+    const favoriteTrack = {
+        id: track.id,
+        name: track.name,
+        artist: track.artist,
+        album: track.album || "",
+        coverUrl: track.cover_url || `https://ui-avatars.com/api/?name=${track.artist}&background=random&color=fff&size=300`,
+        duration: track.duration_ms ? Math.floor(track.duration_ms / 1000) : 180,
+        audioFeatures: {
+            danceability: track.danceability || 0,
+            energy: track.energy || 0,
+            valence: track.valence || 0,
+            tempo: track.tempo || 120,
+            acousticness: track.acousticness || 0,
+        },
+        genre: track.genre || "",
+    };
+
     return (
         <div className="group relative bg-[#181818] p-4 rounded-xl hover:bg-[#282828] transition-all duration-300 cursor-pointer">
             <Link href={`/track/${track.id}`}>
                 <div className="relative aspect-square mb-4 rounded-lg overflow-hidden shadow-lg">
                     <Image
-                        src={track.coverUrl}
+                        src={track.cover_url || `https://ui-avatars.com/api/?name=${track.artist}&background=random&color=fff&size=300`}
                         alt={track.name}
                         width={300}
                         height={300}
@@ -41,13 +60,13 @@ export default function TrackCard({ track }: TrackCardProps) {
                 </Link>
                 <p className="text-sm text-[#a7a7a7] truncate">{track.artist}</p>
                 <div className="flex items-center justify-between pt-2">
-                    <span className="text-xs text-[#a7a7a7]">{track.genre}</span>
+                    <span className="text-xs text-[#a7a7a7]">{track.genre || "Music"}</span>
                     <button
                         className={`transition-colors ${isFavorite(track.id) ? 'text-primary' : 'text-[#a7a7a7] hover:text-white'
                             }`}
                         onClick={(e) => {
                             e.preventDefault();
-                            toggleFavorite(track);
+                            toggleFavorite(favoriteTrack as any);
                         }}
                     >
                         <Heart className={`h-4 w-4 ${isFavorite(track.id) ? 'fill-primary' : ''}`} />

@@ -1,33 +1,37 @@
-from pydantic import BaseModel, ConfigDict
-from typing import List, Optional
+from pydantic import BaseModel
+from typing import Optional
 
-class Track(BaseModel):
-    """
-    Represents a music track with its audio features.
-    """
-    track_id: str
+class TrackBase(BaseModel):
+    id: str
     name: str
     artist: str
-    danceability: float
-    energy: float
-    valence: float
-    tempo: float
-    acousticness: float
-    # We might not need to expose the raw embedding in API responses, keeping it lightweight
+    album: Optional[str] = None
+    genre: Optional[str] = None
+    duration_ms: Optional[int] = None
     
-    model_config = ConfigDict(from_attributes=True)
+    # Audio features
+    danceability: Optional[float] = None
+    energy: Optional[float] = None
+    valence: Optional[float] = None
+    tempo: Optional[float] = None
+    acousticness: Optional[float] = None
+    instrumentalness: Optional[float] = None
+    liveness: Optional[float] = None
+    speechiness: Optional[float] = None
+    loudness: Optional[float] = None
+    
+    class Config:
+        from_attributes = True
 
-class RecommendationRequest(BaseModel):
-    track_id: str
-    limit: int = 10
+class TrackResponse(TrackBase):
+    cover_url: Optional[str] = None
 
-class SearchRequest(BaseModel):
-    query: str
-    limit: int = 10
+class TrackListResponse(BaseModel):
+    tracks: list[TrackResponse]
+    total: int
+    page: int
+    page_size: int
+    has_more: bool
 
-class SearchResponse(BaseModel):
-    results: List[Track]
-
-class RecommendationResponse(BaseModel):
-    source_track_id: str
-    recommendations: List[Track]
+class SimilarTrackResponse(TrackResponse):
+    similarity: float

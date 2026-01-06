@@ -25,8 +25,8 @@ cd ..
 # Start the services
 docker-compose -f infra/docker-compose.yml up -d --build
 ```
-The API will be available at: `http://localhost:8000`
-Interactive Docs (Swagger): `http://localhost:8000/docs`
+The API will be available at: `http://localhost:8001`
+Interactive Docs (Swagger): `http://localhost:8001/docs`
 
 ### 2. Data Ingestion (Kaggle -> Vector DB)
 To populate the database with the 8M track dataset:

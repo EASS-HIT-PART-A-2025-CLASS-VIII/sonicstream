@@ -70,45 +70,49 @@ We utilize a cutting-edge stack designed for massive scalability, type safety, a
 ## 🛠️ Local Development Setup
 
 ### Prerequisites
-*   Docker & Docker Compose
-*   Node.js v20+ (LTS)
-*   Python 3.11+
+*   **Docker & Docker Compose** (for Docker setup)
+*   Node.js v20+ (LTS) (for manual setup)
+*   Python 3.11+ (for manual setup)
+*   The `spotify.sqlite` database file in the `backend/` directory
 
-
-### Quick Start
-
-### 📦 Data Setup (IMPORTANT)
-The project relies on a large SQLite dataset that is not stored in git.
-1.  **Download** `spotify.sqlite` from: [INSERT_LINK_HERE] (Ask team for link)
-2.  **Place** the file in the `backend/` directory:
-    ```
-    backend/spotify.sqlite
-    ```
-
-### Running the App
+### Quick Start with Docker Compose (Recommended)
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/your-org/music-discovery.git
 cd music-discovery
+docker-compose up --build
+```
 
-# 2. Start Infrastructure (Postgres, Redis)
-docker-compose up -d db redis
+The backend will be available at `http://localhost:8001` and the frontend at `http://localhost:3000`.
 
-# 3. Setup Backend
-cd backend
+---
+
+### Manual Setup (Without Docker)
+
+**1. Start the Backend API**
+```bash
+cd music-discovery/backend
+
+# Create and activate virtual environment
 python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-# Run migration & ingest data (approx 10-20 feature extraction)
-python scripts/ingest_data.py
-uvicorn app.main:app --reload
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# 4. Start Frontend
-cd ../frontend
+# Install dependencies
+pip install -r requirements.txt
+
+# Start the API server
+uvicorn app.main:app --reload --port 8001
+```
+
+The API will be available at `http://localhost:8001`. View API docs at `http://localhost:8001/docs`.
+
+**2. Start the Frontend (in a new terminal)**
+```bash
+cd music-discovery/frontend
 npm install
 npm run dev
 ```
+
+The frontend will be available at `http://localhost:3000`.
 
 ---
 *Professional Music Discovery - Engineered for Scale.*

@@ -6,27 +6,22 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install system dependencies (required for some python packages like psycopg)
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv needed for package management
-RUN pip install uv
-
-# Copy project definition
-COPY pyproject.toml .
+# Copy requirements
+COPY requirements.txt .
 
 # Install dependencies
-RUN uv venv .venv && \
-    uv pip install -r pyproject.toml --system
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
 # Expose port
-EXPOSE 8000
+EXPOSE 8001
 
 # Command to run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
