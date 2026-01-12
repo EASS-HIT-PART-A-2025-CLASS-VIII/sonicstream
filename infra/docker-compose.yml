@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   db:
@@ -20,12 +20,12 @@ services:
       retries: 5
 
   backend:
-    build: 
+    build:
       context: ../backend
       dockerfile: Dockerfile
     container_name: music_discovery_api
     ports:
-      - "8000:8000"
+      - "8001:8001"
     volumes:
       - ../backend:/app
     environment:
