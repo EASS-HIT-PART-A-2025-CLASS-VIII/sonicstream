@@ -22,3 +22,6 @@ backend/spotify.sqlite
 
 # Mac
 .DS_Store
+
+# Windows / WSL
+*:Zone.Identifier
