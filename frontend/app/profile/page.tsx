@@ -118,9 +118,9 @@ export default function ProfilePage() {
                             <Button
                                 variant="outline"
                                 className="flex-1 border-white/10 hover:bg-white/5"
-                                disabled
+                                onClick={() => router.push("/settings")}
                             >
-                                Edit Profile (Coming Soon)
+                                Edit Profile
                             </Button>
                             <Button
                                 onClick={handleLogout}
