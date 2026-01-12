@@ -1,0 +1,26 @@
+# Database files (huge!)
+*.sqlite
+*.db
+spotify.sqlite
+users.sqlite
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyc
+
+# IDE settings
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Local dev configs
+.env
