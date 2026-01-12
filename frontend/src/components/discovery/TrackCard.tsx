@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Track } from "@/lib/api";
 import { useFavorites } from "@/lib/favorites";
+import { usePlayer } from "@/lib/usePlayer";
 
 interface TrackCardProps {
     track: Track;
@@ -13,6 +14,7 @@ interface TrackCardProps {
 
 export default function TrackCard({ track }: TrackCardProps) {
     const { isFavorite, toggleFavorite } = useFavorites();
+    const { playTrack } = usePlayer();
     const [artworkUrl, setArtworkUrl] = useState<string | null>(track.cover_url || null);
     const [isLoadingArt, setIsLoadingArt] = useState(!track.cover_url);
 
@@ -88,7 +90,13 @@ export default function TrackCard({ track }: TrackCardProps) {
                         className="absolute bottom-2 right-2 h-12 w-12 bg-green-500 rounded-full flex items-center justify-center shadow-lg translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 hover:scale-105 hover:bg-green-400"
                         onClick={(e) => {
                             e.preventDefault();
-                            // Play functionality would go here
+                            playTrack({
+                                id: track.id,
+                                name: track.name,
+                                artist: track.artist,
+                                album: track.album || undefined,
+                                cover_url: displayUrl
+                            });
                         }}
                     >
                         <Play className="h-6 w-6 text-black fill-black ml-1" />

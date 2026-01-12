@@ -3,6 +3,8 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { AuthProvider } from '@/lib/AuthContext';
+import { PlayerProvider } from '@/lib/usePlayer';
+import YouTubePlayerModal from '@/components/player/YouTubePlayerModal';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,7 +22,10 @@ export default function RootLayout({
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className={cn(inter.className, "bg-background text-foreground min-h-screen antialiased")}>
         <AuthProvider>
-          {children}
+          <PlayerProvider>
+            {children}
+            <YouTubePlayerModal />
+          </PlayerProvider>
         </AuthProvider>
       </body>
     </html>
