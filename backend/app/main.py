@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routes import tracks
+from .routes import tracks, auth
 from .database import get_table_schema
+from .users_database import init_users_db
 
 app = FastAPI(
     title="Music Discovery API",
@@ -13,17 +14,21 @@ app = FastAPI(
 # CORS middleware for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Initialize users database on startup
+@app.on_event("startup")
+async def startup_event():
+    init_users_db()
+
 # Include routers
 app.include_router(tracks.router)
+app.include_router(auth.router)
+
 
 @app.get("/")
 async def root():
