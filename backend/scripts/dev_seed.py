@@ -21,6 +21,19 @@ def run_dev_seed():
         print(f"❌ ERROR: {SQLITE_DB} not found in {os.getcwd()}")
         return
 
+    # Check for popularity in Source DB first
+    has_popularity = False
+    try:
+        tmp_conn = sqlite3.connect(SQLITE_DB)
+        cursor = tmp_conn.execute("PRAGMA table_info(tracks)")
+        columns = [r[1] for r in cursor.fetchall()]
+        if 'popularity' in columns:
+            has_popularity = True
+            print("⭐ Found 'popularity' column! Converting seeding to 'Top Popular' mode.")
+        tmp_conn.close()
+    except Exception:
+        pass
+
     # 1. Connect to Postgres & Init Schema
     try:
         pg_conn = psycopg.connect(PG_DSN, autocommit=False) # Manual commit control
@@ -28,7 +41,11 @@ def run_dev_seed():
         
         with pg_conn.cursor() as cur:
             cur.execute("CREATE EXTENSION IF NOT EXISTS vector")
-            cur.execute("""
+            
+            # Drop table first to allow schema change
+            cur.execute("DROP TABLE IF EXISTS tracks CASCADE")
+            
+            create_query = """
                 CREATE TABLE IF NOT EXISTS tracks (
                     track_id TEXT PRIMARY KEY,
                     name TEXT,
@@ -39,8 +56,14 @@ def run_dev_seed():
                     tempo FLOAT,
                     acousticness FLOAT,
                     audio_embedding VECTOR(5)
-                )
-            """)
+            """
+            
+            if has_popularity:
+                create_query += ", popularity INTEGER"
+                
+            create_query += ")"
+            
+            cur.execute(create_query)
         pg_conn.commit()
     except Exception as e:
         print(f"❌ Postgres Connection Error: {e}")
@@ -51,9 +74,8 @@ def run_dev_seed():
         sqlite_conn = sqlite3.connect(SQLITE_DB)
         sqlite_conn.text_factory = lambda b: b.decode(errors="ignore")
         
-        # Complex JOIN to get REAL data
-        # Note: We rely on the LIMIT to keep this fast.
-        query = f"""
+        # Build Query
+        select_clause = """
             SELECT 
                 t.id, 
                 t.name, 
@@ -63,20 +85,32 @@ def run_dev_seed():
                 MAX(af.valence), 
                 MAX(af.tempo), 
                 MAX(af.acousticness)
+        """
+        
+        if has_popularity:
+            select_clause += ", MAX(t.popularity)"
+            
+        join_clause = """
             FROM tracks t
             JOIN audio_features af ON t.id = af.id
             JOIN r_track_artist rta ON t.id = rta.track_id
             JOIN artists a ON rta.artist_id = a.id
             GROUP BY t.id
-            LIMIT {ROW_LIMIT}
         """
+        
+        order_clause = ""
+        if has_popularity:
+            order_clause = "ORDER BY MAX(t.popularity) DESC"
+            
+        limit_clause = f"LIMIT {ROW_LIMIT}"
+        
+        final_query = f"{select_clause} {join_clause} {order_clause} {limit_clause}"
         
         print(f"⚡ Executing SQLite JOIN Query (fetching {ROW_LIMIT} rows)...")
         cursor = sqlite_conn.cursor()
-        cursor.execute(query)
+        cursor.execute(final_query)
         
         # 3. Stream & Insert with Progress Bar
-        batch_buffer = []
         total_inserted = 0
         
         # Initialize progress bar
@@ -89,7 +123,7 @@ def run_dev_seed():
             
             clean_rows = []
             for r in rows:
-                # r = (id, track_name, artist_name, dance, energy, valence, tempo, acoustic)
+                # r = (id, track_name, artist_name, dance, energy, valence, tempo, acoustic, [popularity])
                 track_id = r[0]
                 name = r[1]
                 artist = r[2] or "Unknown"
@@ -101,10 +135,9 @@ def run_dev_seed():
                 
                 # Normalize tempo for embedding (0-250 approx range)
                 tempo_norm = min(max(tempo / 250.0, 0.0), 1.0)
-                
                 embedding = [dance, energy, valence, tempo_norm, acoustic]
                 
-                clean_rows.append((
+                row_data = [
                     track_id, 
                     name, 
                     artist, 
@@ -114,11 +147,20 @@ def run_dev_seed():
                     tempo, 
                     acoustic, 
                     str(embedding)
-                ))
+                ]
+                
+                if has_popularity:
+                    row_data.append(r[8] or 0) # popularity
+                
+                clean_rows.append(tuple(row_data))
             
             # Insert Batch to Postgres
             with pg_conn.cursor() as cur:
-                with cur.copy("COPY tracks (track_id, name, artist, danceability, energy, valence, tempo, acousticness, audio_embedding) FROM STDIN") as copy:
+                cols = "track_id, name, artist, danceability, energy, valence, tempo, acousticness, audio_embedding"
+                if has_popularity:
+                    cols += ", popularity"
+                    
+                with cur.copy(f"COPY tracks ({cols}) FROM STDIN") as copy:
                     for row in clean_rows:
                         copy.write_row(row)
             
