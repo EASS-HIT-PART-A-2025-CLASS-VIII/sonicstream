@@ -4,59 +4,59 @@ Professional FastAPI backend for the Music Discovery Platform, featuring a scala
 
 ## 🛠️ Stack
 - **Framework**: FastAPI (Python 3.11+)
-- **Dependency Management**: `uv`
+- **Dependency Management**: `uv` (local) / `pip` (Docker)
 - **Database**: PostgreSQL 16 + pgvector
 - **Processing**: Polars (High-performance DataFrames)
 - **Infrastructure**: Docker & Docker Compose
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 - Docker & Docker Compose
 
-### 1. Start Infrastructure
-Run the complete stack (DB, Redis, Backend) with Docker Compose.
-**Important:** Run this from the **project root** directory (parent of `backend` and `infra`).
-
+### 1. Start All Services
+Run from the **project root** (where `docker-compose.yml` is):
 ```bash
-# If you are in the /backend folder, go back one level:
-cd ..
-
-# Start the services
-docker-compose -f infra/docker-compose.yml up -d --build
+docker compose up -d --build
 ```
-The API will be available at: `http://localhost:8001`
-Interactive Docs (Swagger): `http://localhost:8001/docs`
+This starts:
+- `db` (Postgres + pgvector) on port `5432`
+- `redis` on port `6379`
+- `backend` (FastAPI) on port `8001`
+- `frontend` (Next.js) on port `3000`
 
-### 2. Data Ingestion (Kaggle -> Vector DB)
-To populate the database with the 8M track dataset:
-
-**Option A: Running inside Docker (Recommended)**
+### 2. Seed the Database (First Time Only)
 ```bash
-# 1. Ensure you have your Kaggle credentials in the infra/docker-compose.yml or .env
-# 2. Exec into the backend container
-docker exec -it music_discovery_api bash
-
-# 3. Run the ingestion script
-uv run scripts/ingest_data.py
+docker exec -it music_discovery_backend python scripts/dev_seed.py
 ```
+This loads **10,000 real tracks** from the Spotify dataset into Postgres. You only need to do this once—data persists across restarts.
 
-**Option B: Running Locally**
-```bash
-cd backend
-# Install dependencies
-uv sync
+### 3. Access the App
+- **API Docs (Swagger)**: http://localhost:8001/docs
+- **Frontend**: http://localhost:3000
 
-# Run script (Requires local Postgres running on localhost:5432)
-uv run scripts/ingest_data.py
-```
+---
 
-### 3. Running Tests
-Tests are built with `pytest`.
-```bash
-# Unit tests + API Mock tests
-docker exec -it music_discovery_api uv run pytest tests/
-```
+## 📂 Utility Scripts
+
+| Script | Purpose | How to Run |
+|--------|---------|------------|
+| `scripts/dev_seed.py` | Seed 10k real rows into Postgres | `docker exec -it music_discovery_backend python scripts/dev_seed.py` |
+| `scripts/reset_db.py` | Truncate all data from Postgres | `docker exec -it music_discovery_backend python scripts/reset_db.py` |
+| `scripts/create_dev_db.py` | Create a portable `spotify_dev.sqlite` file | `python scripts/create_dev_db.py` (run on host) |
+
+---
+
+## 💾 Data Persistence
+
+| Action | Is Data Lost? |
+|--------|---------------|
+| `docker compose stop` | ❌ No |
+| `docker compose down` | ❌ No |
+| Restart your computer | ❌ No |
+| `docker compose down -v` | ✅ **Yes** (volumes deleted) |
+
+---
 
 ## 🏗️ Architecture
 The backend is structured vertically by domain:
@@ -66,19 +66,16 @@ The backend is structured vertically by domain:
 - `app/dependencies`: Dependency Injection (DB Pool).
 
 ## 🔌 API Endpoints
-### Search
-- **GET /search?q=...**
-  - Fuzzy text search for tracks by name or artist.
-  - Returns: List of tracks.
+### Tracks
+- **GET /tracks**: Paginated list of all tracks.
+- **GET /tracks/search?q=...**: Fuzzy text search by name or artist.
+- **GET /tracks/{id}/similar**: Find similar tracks using vector similarity.
 
-### Recommendations
-- **POST /recommend**
-  - Body: `{ "track_id": "...", "limit": 10 }`
-  - Uses vector similarity (HNSW index) to find nearest neighbors.
-  - Returns: List of similar tracks.
+---
 
-## 📂 Project Structure
+## 📁 Project Structure
 - `/app`: FastAPI application source code.
-- `/scripts`: Data engineering tasks (Ingestion, ETL).
+- `/scripts`: Data engineering tasks (Seeding, Reset, ETL).
 - `/tests`: Pytest suite (Unit & Mock Integration).
 - `pyproject.toml`: Modern Python dependency configuration.
+- `requirements.txt`: Legacy pip dependencies (used by Dockerfile).

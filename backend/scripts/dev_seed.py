@@ -9,7 +9,8 @@ load_dotenv()
 
 # Config
 SQLITE_DB = "spotify.sqlite"
-PG_DSN = f"postgresql://{os.getenv('POSTGRES_USER', 'admin')}:{os.getenv('POSTGRES_PASSWORD', 'admin')}@localhost:5432/{os.getenv('POSTGRES_DB', 'music_discovery')}"
+POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'db')
+PG_DSN = f"postgresql://{os.getenv('POSTGRES_USER', 'admin')}:{os.getenv('POSTGRES_PASSWORD', 'admin')}@{POSTGRES_HOST}:5432/{os.getenv('POSTGRES_DB', 'music_discovery')}"
 BATCH_SIZE = 1000  # Commit every N rows
 ROW_LIMIT = 10000  # Total rows to seed
 
