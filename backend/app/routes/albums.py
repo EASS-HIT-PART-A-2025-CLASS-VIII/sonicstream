@@ -181,11 +181,8 @@ async def get_album_recommendations(
             )
             SELECT 
                 album_id, name, artist, popularity, genre,
-                -- Apply subtle genre boost: +0.05 if same genre (avoid saturating at 1.0)
-                CASE 
-                    WHEN genre = :source_genre THEN base_similarity + 0.05
-                    ELSE base_similarity
-                END as similarity
+                -- Pure cosine similarity without genre boosting
+                base_similarity as similarity
             FROM weighted_similarities
             ORDER BY similarity DESC, popularity DESC
             LIMIT :limit
