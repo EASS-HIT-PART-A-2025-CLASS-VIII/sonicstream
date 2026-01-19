@@ -104,7 +104,7 @@ def create_albums_table():
                   AND LOWER(t.name) NOT LIKE '%intro%'
                   AND LOWER(t.name) NOT LIKE '%outro%'
                 GROUP BY t.album, t.artist
-                HAVING COUNT(*) >= 1
+                HAVING COUNT(*) >= 4 -- Only include albums with at least 4 tracks (filters out "junk" singles/EPs)
             """
             cur.execute(insert_query)
             

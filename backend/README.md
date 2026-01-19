@@ -31,7 +31,13 @@ docker exec -it music_discovery_backend python scripts/dev_seed.py
 ```
 This loads **10,000 real tracks** from the Spotify dataset into Postgres. You only need to do this once—data persists across restarts.
 
-### 3. Access the App
+### 3. Generate Albums Table (Required for Album Match)
+This aggregates individual tracks into full albums with 9D audio embeddings.
+```bash
+docker exec -it music_discovery_backend python /app/scripts/seeding/create_albums_table.py
+```
+
+### 4. Access the App
 - **API Docs (Swagger)**: http://localhost:8001/docs
 - **Frontend**: http://localhost:3000
 
@@ -42,6 +48,7 @@ This loads **10,000 real tracks** from the Spotify dataset into Postgres. You on
 | Script | Purpose | How to Run |
 |--------|---------|------------|
 | `scripts/dev_seed.py` | Seed 10k real rows into Postgres | `docker exec -it music_discovery_backend python scripts/dev_seed.py` |
+| `scripts/seeding/create_albums_table.py` | Generate albums with 9D embeddings | `docker exec -it music_discovery_backend python /app/scripts/seeding/create_albums_table.py` |
 | `scripts/reset_db.py` | Truncate all data from Postgres | `docker exec -it music_discovery_backend python scripts/reset_db.py` |
 | `scripts/create_dev_db.py` | Create a portable `spotify_dev.sqlite` file | `python scripts/create_dev_db.py` (run on host) |
 
