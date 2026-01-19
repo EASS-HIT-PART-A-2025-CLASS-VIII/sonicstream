@@ -3,6 +3,23 @@ import psycopg
 import os
 from dotenv import load_dotenv
 
+"""
+Script: fast_seed.py
+Description:
+    A lightweight seeding script designed for SUPER FAST initialization.
+    
+    It bypasses complex joins and mocked data (artist='Unknown', features=0.5) 
+    to populate the Postgres database with track IDs and names almost instantly.
+    
+    Useful for:
+    - Testing backend connectivity
+    - Testing search performance (with dummy data)
+    - Quickly resetting the environment
+
+Usage:
+    python backend/scripts/seeding/fast_seed.py
+"""
+
 # Load env vars
 load_dotenv()
 
