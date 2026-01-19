@@ -1,13 +1,11 @@
 "use client";
 
 import { usePlayer } from "@/lib/usePlayer";
-import { X, ChevronDown, ChevronUp } from "lucide-react";
-import { useState, useEffect } from "react";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function BottomPlayer() {
     const { currentTrack, isOpen, closePlayer } = usePlayer();
-    const [isCollapsed, setIsCollapsed] = useState(false);
 
     // If no track selected, don't render anything
     if (!currentTrack) return null;
@@ -22,13 +20,8 @@ export default function BottomPlayer() {
                 !isOpen && "translate-y-full"
             )}
         >
-            {/* Collapse/Expand Handle (Optional, strictly speaking user asked for persistent pane) */}
-            {/* <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-[#181818] rounded-t-lg px-4 py-1 cursor-pointer border-t border-x border-white/10">
-               {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-            </div> */}
-
             <div className="container mx-auto max-w-screen-xl relative">
-                {/* Close Button (Absolute positioned to not interfere with embed layout if possible, or just placed nicely) */}
+                {/* Close Button */}
                 <button
                     onClick={closePlayer}
                     className="absolute top-2 right-4 z-10 p-1 rounded-full bg-black/50 hover:bg-white/20 text-white/50 hover:text-white transition-colors"
