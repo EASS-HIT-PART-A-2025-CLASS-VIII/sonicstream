@@ -1,59 +1,78 @@
 ---
 name: recSys
-description: Framework for implementing swappable, testable recommendation algorithms using the Strategy Pattern.
+description: Principal-grade framework for recommendation engines (Ranking, Context, Resilience).
 ---
 
-# Recommendation System Skill
+# Principal Recommendation System Skill
 
-To maintain a professional, scalable architecture, all recommendation logic must strictly follow the **Strategy Pattern**.
+## Core Philosophy
+We do not just "return items". We **Rank Candidates** based on **Context**.
 
-## 1. Core Architecture
-**NEVER** hardcode SQL or logic inside the Service/Router.
+## 1. The Data Contracts
+**NEVER** use raw primitives. Use Domain Models.
 
-### The Interface
-Every algorithm must implement this contract:
+```python
+from pydantic import BaseModel
+from typing import List, Optional, Dict
+
+class RecommendationContext(BaseModel):
+    user_id: str
+    session_id: str
+    timestamp: float
+    current_track_id: Optional[str] = None
+    device_type: str = "mobile" # mobile, web, speaker
+
+class RecommendationCandidate(BaseModel):
+    track_id: str
+    score: float # 0.0 to 1.0
+    strategy_source: str # e.g. "vector_v1", "trending"
+    reason: str # "Similar to [Track Name]"
+    debug_info: Optional[Dict] = None # For internal tools ONLY
+```
+
+## 2. The Strategy Interface
 ```python
 from abc import ABC, abstractmethod
-from typing import List
 
 class RecommendationStrategy(ABC):
     @abstractmethod
-    async def recommend(self, user_id: str, limit: int = 10) -> List[str]:
-        """Returns a list of Track IDs"""
+    async def recommend(self, ctx: RecommendationContext, limit: int = 100) -> List[RecommendationCandidate]:
+        """
+        Retrieves CANDIDATES. 
+        Note: Limits should be higher (e.g. 100) to allow the Ranker to work.
+        """
         pass
-        
+    
     @property
     @abstractmethod
     def name(self) -> str:
-        """Unique identifier for logging/ab-testing"""
+        """Unique identifier"""
         pass
 ```
 
-## 2. Implementation Rules
-1.  **Isolation**: Strategies must be in `backend/app/recommendations/strategies/`.
-2.  **Statelessness**: Algorithms should be stateless class instances.
-3.  **Data Abstraction**: Do not assume `pgvector` exists unless the strategy is explicitly `VectorStrategy`. Provide a fallback (e.g., `RandomStrategy` or `TrendingStrategy`).
+## 3. The Pipeline (Principal Feature)
+A professional system separates **Retrieval** from **Ranking**.
 
-## 3. The Factory
-Use a Factory to instantiate the correct strategy based on configuration or A/B test flags.
+1.  **Retrieval layer**: Fast. Gets ~500 candidates. (Vector Search, Trending).
+2.  **Filtering layer**: Removes blocked artists, already played tracks.
+3.  **Ranking layer**: Heavy. Re-scores top 50 based on business logic.
 
 ```python
-class RecommenderFactory:
-    @staticmethod
-    def get_strategy(mode: str) -> RecommendationStrategy:
-        if mode == "vector": return VectorStrategy()
-        if mode == "trending": return TrendingStrategy()
-        return RandomStrategy()
+# Example Pipeline Logic
+async def get_recommendations(ctx: RecommendationContext) -> List[RecommendationCandidate]:
+    try:
+        # 1. Retrieval (With Circuit Breaker)
+        candidates = await vector_strategy.recommend(ctx, limit=100)
+    except TimeoutError:
+        # FALLBACK (Resilience)
+        candidates = await trending_strategy.recommend(ctx, limit=100)
+
+    # 2. Ranking
+    ranked = ranker.sort(candidates, user_preferences=...)
+    
+    return ranked[:10]
 ```
 
-## 4. Evaluation (Professional Standard)
-Every new strategy requires a **Offline Metric Test**:
--   **Recall@K**: How many relevant items were in the top K?
--   **Diversity**: Are the results too similar?
--   **Latency**: Must return in < 200ms.
-
-## 5. Development Workflow
-1.  Create `strategies/MyNewAlgo.py`.
-2.  Implement `recommend()`.
-3.  Add entry to `RecommenderFactory`.
-4.  Write a test ensuring it returns `limit` items and handles invalid users gracefully.
+## 4. Observability Requirement
+Every response MUST include a `trace_id` in the logs.
+If `ctx.user_id` is an internal admin, return `debug_info` in the API response.
