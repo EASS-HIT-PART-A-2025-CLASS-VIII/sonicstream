@@ -12,7 +12,7 @@ venv/
 
 # Database
 spotify.sqlite
-*.sqlite
+users.sqlite
 *.db
 backend/spotify.sqlite
 
