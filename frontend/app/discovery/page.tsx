@@ -1,17 +1,38 @@
 "use client"
 
-import { useState } from "react";
-import api, { Track, TrackListResponse } from "@/lib/api";
+import { useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import api, { Track } from "@/lib/api";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import TrackCard from "@/components/discovery/TrackCard";
+import SearchBar from "@/components/dashboard/SearchBar";
 import { Loader2, AlertCircle } from "lucide-react";
 
-export default function DiscoveryPage() {
+function DiscoveryContent() {
+    const searchParams = useSearchParams();
+    const router = useRouter(); // Import this
+    const query = searchParams.get("search");
     const [error, setError] = useState<string | null>(null);
+
+    // Live search handler
+    const handleSearch = (newQuery: string) => {
+        const params = new URLSearchParams(searchParams);
+        if (newQuery) {
+            params.set("search", newQuery);
+        } else {
+            params.delete("search");
+        }
+        router.replace(`/discovery?${params.toString()}`);
+    };
 
     const fetchTracks = async (page: number): Promise<Track[]> => {
         try {
-            const response = await api.getTracks(page, 20);
+            let response;
+            if (query) {
+                response = await api.searchTracks(query, page, 20);
+            } else {
+                response = await api.getTracks(page, 20);
+            }
             setError(null);
             return response.tracks;
         } catch (err) {
@@ -23,13 +44,19 @@ export default function DiscoveryPage() {
     const { items: tracks, loading, hasMore, lastElementRef } = useInfiniteScroll({
         fetchMore: fetchTracks,
         pageSize: 20,
+        dependencies: [query] // Reset list when query changes
     });
 
     return (
         <div className="py-6">
             <div className="mb-8">
-                <h1 className="text-3xl md:text-4xl font-bold mb-2">Discover</h1>
-                <p className="text-muted-foreground">AI-curated tracks from 8 million Spotify songs</p>
+                <SearchBar onSearch={handleSearch} />
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">
+                    {query ? `Results for "${query}"` : "Discover"}
+                </h1>
+                <p className="text-muted-foreground">
+                    {query ? "Found in our library" : "AI-curated tracks from 8 million Spotify songs"}
+                </p>
             </div>
 
             {error && (
@@ -68,5 +95,13 @@ export default function DiscoveryPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function DiscoveryPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+            <DiscoveryContent />
+        </Suspense>
     );
 }

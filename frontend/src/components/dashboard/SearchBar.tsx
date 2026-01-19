@@ -1,17 +1,35 @@
-"use client"
+"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import api, { Track } from "@/lib/api";
 import Link from "next/link";
+import { useDebounce } from "@/hooks/useDebounce";
 
-export default function SearchBar() {
+interface SearchBarProps {
+    onSearch?: (query: string) => void;
+}
+
+export default function SearchBar({ onSearch }: SearchBarProps) {
     const [query, setQuery] = useState("");
+    const debouncedQuery = useDebounce(query, 300);
     const [results, setResults] = useState<Track[]>([]);
     const [loading, setLoading] = useState(false);
     const [showResults, setShowResults] = useState(false);
     const router = useRouter();
+
+    // Effect for handling live search (debounced)
+    useEffect(() => {
+        // Only trigger if onSearch is provided (live mode logic)
+        // AND query is sufficient length
+        if (onSearch && debouncedQuery.length >= 2) {
+            onSearch(debouncedQuery);
+        } else if (onSearch && debouncedQuery.length === 0) {
+            // Optional: Handle clearing search
+            onSearch("");
+        }
+    }, [debouncedQuery, onSearch]);
 
     const handleSearch = async (searchQuery: string) => {
         setQuery(searchQuery);
@@ -22,6 +40,7 @@ export default function SearchBar() {
             return;
         }
 
+        // Dropdown suggestions logic (still useful for local preview)
         setLoading(true);
         try {
             const response = await api.searchTracks(searchQuery, 0, 5);
@@ -37,10 +56,13 @@ export default function SearchBar() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (query.length >= 2) {
+        // If onSearch is present, live search handled it.
+        // If not, we do standard navigation.
+        if (!onSearch && query.length >= 2) {
             setShowResults(false);
             router.push(`/discovery?search=${encodeURIComponent(query)}`);
         }
+        setShowResults(false);
     };
 
     return (

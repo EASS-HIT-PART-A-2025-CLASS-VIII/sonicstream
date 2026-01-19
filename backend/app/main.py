@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routes import tracks, auth
+from .routes import tracks, auth, recommendations
 from .database import get_table_schema
 from .users_database import init_users_db
 
@@ -28,6 +28,7 @@ async def startup_event():
 # Include routers
 app.include_router(tracks.router)
 app.include_router(auth.router)
+app.include_router(recommendations.router)
 
 
 @app.get("/")

@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Home, Compass, Heart, Settings, Loader2, User, LogOut, ChevronUp } from "lucide-react";
+import { Home, Compass, Heart, Settings, Loader2, User, LogOut, ChevronUp, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useState, useRef, useEffect } from "react";
 
 const navItems = [
     { icon: Home, label: "Home", href: "/dashboard" },
     { icon: Compass, label: "Discovery", href: "/discovery" },
+    { icon: Sparkles, label: "For You", href: "/recommendations" },
     { icon: Heart, label: "Favorites", href: "/favorites" },
     { icon: Settings, label: "Settings", href: "/settings" },
 ];
