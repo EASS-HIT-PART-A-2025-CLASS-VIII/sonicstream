@@ -139,58 +139,69 @@ async def get_album_recommendations(
     Get album recommendations using enhanced K-NN with:
     1. 9D audio feature embeddings (5 base + 4 derived)
     2. Weighted cosine similarity
-    3. Genre-based boosting
-    4. Asymmetric popularity filtering
+    3. Same-artist exclusion (no obvious recommendations)
+    4. Artist diversity (max 2 albums per artist)
+    5. Optional genre boost for matching genres
     """
     # Verify source album exists and get its details
     source = db.execute(
-        text("SELECT avg_embedding, popularity, genre FROM albums WHERE album_id = :id"),
+        text("SELECT avg_embedding, genre, artist FROM albums WHERE album_id = :id"),
         {"id": request.album_id}
     ).fetchone()
     
     if not source:
         raise HTTPException(status_code=404, detail="Album not found")
     
-    source_popularity = source.popularity or 0
     source_genre = source.genre or 'other'
-    
-    # Asymmetric popularity filter:
-    # - If source is popular (>= 50): only recommend albums with popularity >= (source - 40)
-    # - This prevents "Linkin Park" (Pop 85) from recommending "Obscure Band" (Pop 10)
-    # - But allows "Obscure Band" (Pop 10) to recommend "Linkin Park"
-    popularity_threshold = 0
-    if source_popularity >= 50:
-        popularity_threshold = max(0, source_popularity - 40)
-        
-    popularity_filter = f"popularity >= {popularity_threshold}"
+    source_artist = source.artist or ''
     
     # K-NN search using cosine similarity (<=> operator)
+    # Improvements:
+    # 1. Exclude albums from the same artist (too obvious)
+    # 2. Limit to max 2 albums per artist (diversity)
+    # 3. Small genre boost (+0.03) for matching genres
     result = db.execute(
-        text(f"""
+        text("""
             WITH source_album AS (
                 SELECT avg_embedding FROM albums WHERE album_id = :id
             ),
-            weighted_similarities AS (
+            base_similarities AS (
                 SELECT 
                     album_id, name, artist, popularity, genre,
                     -- Cosine similarity (1 - cosine_distance)
-                    1 - (avg_embedding <=> (SELECT avg_embedding FROM source_album)) as base_similarity
+                    1 - (avg_embedding <=> (SELECT avg_embedding FROM source_album)) as raw_similarity
                 FROM albums
                 WHERE album_id != :id
-                  AND {popularity_filter}
+                  AND artist != :source_artist  -- Exclude same artist
+            ),
+            boosted_similarities AS (
+                SELECT 
+                    album_id, name, artist, popularity, genre,
+                    -- Add small genre boost for matching genres
+                    CASE WHEN genre = :source_genre 
+                         THEN raw_similarity + 0.03 
+                         ELSE raw_similarity 
+                    END as similarity
+                FROM base_similarities
+            ),
+            ranked_per_artist AS (
+                SELECT 
+                    album_id, name, artist, popularity, genre, similarity,
+                    -- Limit to 2 albums per artist for diversity
+                    ROW_NUMBER() OVER (PARTITION BY artist ORDER BY similarity DESC) as artist_rank
+                FROM boosted_similarities
             )
-            SELECT 
-                album_id, name, artist, popularity, genre,
-                -- Pure cosine similarity without genre boosting
-                base_similarity as similarity
-            FROM weighted_similarities
-            ORDER BY similarity DESC, popularity DESC
+            SELECT album_id, name, artist, popularity, genre, similarity
+            FROM ranked_per_artist
+            WHERE artist_rank <= 2  -- Max 2 per artist
+            ORDER BY similarity DESC
             LIMIT :limit
         """),
         {
             "id": request.album_id, 
             "limit": request.limit,
-            "source_genre": source_genre
+            "source_genre": source_genre,
+            "source_artist": source_artist
         }
     ).fetchall()
     

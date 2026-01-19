@@ -34,7 +34,12 @@ def create_albums_table():
             cur.execute("DROP TABLE IF EXISTS albums CASCADE")
             print("🗑️  Dropped existing albums table.")
             
-            # 2. Create albums table with genre column and 9D embedding
+            # 2. Get global max popularity for rescaling
+            cur.execute("SELECT MAX(popularity) FROM tracks")
+            global_max_pop = cur.fetchone()[0] or 1
+            print(f"📊 Global Max Popularity in tracks: {global_max_pop}. Using this to rescale to 100.")
+
+            # 3. Create albums table with genre column and 9D embedding
             create_query = """
                 CREATE TABLE albums (
                     album_id TEXT PRIMARY KEY,
@@ -48,42 +53,59 @@ def create_albums_table():
             cur.execute(create_query)
             print("✅ Created albums table schema (9D embeddings + genre).")
             
-            # 3. Aggregate track data into albums with pre-weighted features and genre inference
-            insert_query = """
+            # 4. Aggregate track data into albums with pre-weighted features and artist legacy fallback
+            # We scale the popularity so that global_max_pop becomes 100
+            scale_factor = 100.0 / global_max_pop
+            
+            insert_query = f"""
+                WITH artist_legacy AS (
+                    SELECT artist, MAX(popularity) as artist_peak
+                    FROM tracks
+                    WHERE artist IS NOT NULL
+                    GROUP BY artist
+                )
                 INSERT INTO albums (album_id, name, artist, popularity, genre, avg_embedding)
                 SELECT 
-                    MD5(album || artist) as album_id,
-                    album as name,
-                    MIN(artist) as artist,
-                    -- Use MAX popularity to represent the album's peak
-                    COALESCE(MAX(popularity), 0) as popularity,
+                    MD5(t.album || t.artist) as album_id,
+                    t.album as name,
+                    MIN(t.artist) as artist,
+                    -- Normalized Artist Legacy Fallback: 
+                    -- We take the raw peak popularity (album or artist*0.8) and scale it to 100.
+                    CAST(GREATEST(
+                        COALESCE(MAX(t.popularity), 0), 
+                        COALESCE(MAX(al.artist_peak), 0) * 0.8
+                    ) * {scale_factor} AS INTEGER) as popularity,
                     -- Genre inference
                     CASE 
-                        WHEN AVG(energy) > 0.75 AND AVG(danceability) > 0.65 THEN 'electronic'
-                        WHEN AVG(acousticness) > 0.6 AND AVG(energy) < 0.5 THEN 'acoustic'
-                        WHEN AVG(energy) > 0.7 AND AVG(acousticness) < 0.3 THEN 'rock'
-                        WHEN AVG(danceability) > 0.65 AND AVG(valence) > 0.6 THEN 'pop'
-                        WHEN AVG(acousticness) > 0.4 AND AVG(valence) < 0.4 THEN 'folk'
+                        WHEN AVG(t.energy) > 0.75 AND AVG(t.danceability) > 0.65 THEN 'electronic'
+                        WHEN AVG(t.acousticness) > 0.6 AND AVG(t.energy) < 0.5 THEN 'acoustic'
+                        WHEN AVG(t.energy) > 0.7 AND AVG(t.acousticness) < 0.3 THEN 'rock'
+                        WHEN AVG(t.danceability) > 0.65 AND AVG(t.valence) > 0.6 THEN 'pop'
+                        WHEN AVG(t.acousticness) > 0.4 AND AVG(t.valence) < 0.4 THEN 'folk'
                         ELSE 'other'
                     END as genre,
                     -- Pre-weighted 9D embedding
                     ARRAY[
-                        AVG(danceability) * 1.5,
-                        AVG(energy) * 1.5,
-                        AVG(valence) * 1.0,
-                        AVG(acousticness) * 1.2,
-                        (AVG(tempo) / 250.0) * 0.8,
-                        AVG(energy * danceability) * 1.3,
-                        AVG(valence * energy) * 1.0,
-                        AVG(acousticness * (1 - energy)) * 0.9,
-                        AVG(CASE WHEN danceability > 0.5 THEN tempo / 250.0 ELSE 0.3 END) * 0.7
+                        AVG(t.danceability) * 1.5,
+                        AVG(t.energy) * 1.5,
+                        AVG(t.valence) * 1.0,
+                        AVG(t.acousticness) * 1.2,
+                        (AVG(t.tempo) / 250.0) * 0.8,
+                        AVG(t.energy * t.danceability) * 1.3,
+                        AVG(t.valence * t.energy) * 1.0,
+                        AVG(t.acousticness * (1 - t.energy)) * 0.9,
+                        AVG(CASE WHEN t.danceability > 0.5 THEN t.tempo / 250.0 ELSE 0.3 END) * 0.7
                     ]::vector as avg_embedding
-                FROM tracks
-                WHERE album IS NOT NULL AND album != ''
-                GROUP BY album, artist
+                FROM tracks t
+                JOIN artist_legacy al ON t.artist = al.artist
+                WHERE t.album IS NOT NULL AND t.album != ''
+                  AND LOWER(t.name) NOT LIKE '%skit%'
+                  AND LOWER(t.name) NOT LIKE '%interlude%'
+                  AND LOWER(t.name) NOT LIKE '%intro%'
+                  AND LOWER(t.name) NOT LIKE '%outro%'
+                GROUP BY t.album, t.artist
                 HAVING COUNT(*) >= 1
             """
-
             cur.execute(insert_query)
             
             # 4. Get count
