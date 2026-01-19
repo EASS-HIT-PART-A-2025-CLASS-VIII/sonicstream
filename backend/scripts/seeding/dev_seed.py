@@ -38,7 +38,7 @@ load_dotenv()
 # The file path "spotify_dev.sqlite" is relative to CWD (root).
 SQLITE_DB = "backend/spotify_dev.sqlite"  # Adjusted specific path to match root execution
 
-POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'db')
+POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
 PG_DSN = f"postgresql://{os.getenv('POSTGRES_USER', 'admin')}:{os.getenv('POSTGRES_PASSWORD', 'admin')}@{POSTGRES_HOST}:5432/{os.getenv('POSTGRES_DB', 'music_discovery')}"
 BATCH_SIZE = 1000  # Commit every N rows
 ROW_LIMIT = 100000  # Total rows to seed check
