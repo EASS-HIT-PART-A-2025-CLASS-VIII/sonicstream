@@ -5,6 +5,23 @@ from dotenv import load_dotenv
 import psycopg
 from pgvector.psycopg import register_vector
 
+"""
+Script: ingest_data.py
+Description:
+    Raw Data Ingestion Pipeline.
+    1. Downloads the 'maltegrosse/8-m-spotify-tracks-genre-audio-features' dataset from Kaggle.
+    2. Uses Polars to efficiently load and normalize the CSV data.
+    3. Bulk inserts the cleaned data into PostgreSQL using the COPY command.
+    
+    This is the first step in populating the system if starting from scratch.
+
+Usage:
+    python backend/scripts/etl/ingest_data.py
+    
+    Requirements:
+    - KAGGLE_USERNAME and KAGGLE_KEY environment variables.
+"""
+
 # Load environment variables
 load_dotenv()
 
@@ -41,7 +58,6 @@ def init_db():
         """)
         
         # Create HNSW index for fast similarity search
-        # lists=100 is a starter value, can be tuned for 8M rows
         conn.execute("""
             CREATE INDEX IF NOT EXISTS tracks_embedding_idx 
             ON tracks USING hnsw (audio_embedding vector_l2_ops)
@@ -95,10 +111,6 @@ def process_data(csv_path: str = None):
         "valence", "tempo", "acousticness", "instrumentalness", "liveness", "speechiness"
     ]
     
-    # Verify columns exist (eager load for schema check - optimization: read header only)
-    # For now, we'll try to select and catch errors or list all columns first
-    # robust approach:
-    
     print("🧹 Cleaning and Normalizing...")
     
     # Transformation Pipeline
@@ -132,26 +144,9 @@ def insert_data(df: pl.DataFrame):
     
     # We need to construct the embedding vector for each row
     # Polars doesn't support 'list of floats' natively well for DB export without some conversion
-    # We will iterate in batches or use a generator for COPY
-    
-    # Efficient strategy: Convert required cols to numpy, zip them, and pass to copy
-    # Columns: track_id, name, artist, danceability, energy, valence, tempo, acousticness, audio_embedding (list)
-    
-    # 1. Prepare data
-    # We simply select the columns we want to insert directly
-    # Embedding is [danceability, energy, valence, tempo_norm, acousticness]
-    
+
     print("⚙️  Preparing vectors...")
     feature_cols = ["danceability", "energy", "valence", "tempo_norm", "acousticness"]
-    
-    # It's faster to convert to python objects row-wise for the driver to handle 'list' -> 'vector'
-    # For 8M rows, strict polling might be slow, but 'copy' is best.
-    
-    # Let's use psycopg's efficient copy.
-    # We will create a generator that yields rows.
-    
-    # Convert DF to rows (this might take memory, but is simplest for correctness)
-    # Optimization: Use iter_rows(named=True)
     
     rows = df.iter_rows(named=True)
     
@@ -160,22 +155,13 @@ def insert_data(df: pl.DataFrame):
     
     with get_db_connection() as conn:
         with conn.cursor() as cur:
-            # We must use a loop of COPY commands or handle transactions manually to allow reading mid-process
-            # However, COPY is atomic. To allow reading "steps", we need to run multiple COPY commands.
-            # But iterating python rows -> multiple COPY calls is complex with existing generator logic.
-            # Easiest way: Use normal INSERTs for the first batch? No, too slow.
-            
-            # Better strategy: We can't break "one COPY" easily into commits without restarting the copy.
-            # So code below changes to: Accumulate a batch, write it via COPY, commit, repeat.
-            pass
-            
-            # Re-implementing loop for Batched COPY
             batch_buffer = []
             
             print(f"🔄 Starting Batched Insert (Commit every {BATCH_SIZE} rows)...")
             
             for row in rows:
                 # pgvector expects '[1.0,2.0,3.0]' string format for COPY
+                embedding = [row[c] for c in feature_cols]
                 embedding_str = str(embedding)
                 
                 batch_buffer.append((
@@ -227,7 +213,6 @@ if __name__ == "__main__":
         df = process_data()
         
         # 4. Insert Data
-        # Only run if we have a valid DB connection (checked implicitly by init_db or try/catch)
         insert_data(df)
         
     except Exception as e:

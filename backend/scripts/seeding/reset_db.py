@@ -2,6 +2,18 @@ import psycopg
 import os
 from dotenv import load_dotenv
 
+"""
+Script: reset_db.py
+Description:
+    Utility to TRUNCATE the 'tracks' table in Postgres.
+    
+    This effectively wipes all track data but keeps the table schema integrity.
+    Useful before a fresh seed run.
+
+Usage:
+    python backend/scripts/seeding/reset_db.py
+"""
+
 # Load env vars
 load_dotenv()
 

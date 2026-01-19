@@ -1,7 +1,38 @@
 import sqlite3
 import polars as pl
 import os
-from ingest_data import insert_data, init_db
+import sys
+
+# Adjust python path to allow importing from sibling/parent directories if needed
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Import from etl module (assuming ingest_data is moved to etl folder or needs path adjustment)
+# Since we are moving ingest_data to ../etl/ingest_data.py, we might need to adjust imports.
+# However, usually scripts are run as modules or with PYTHONPATH setup. 
+# For now, I will assume the user runs from root and I might need to fix imports later.
+# But `ingest_data.py` is being moved to `etl/`.
+# So `from ingest_data import ...` will break if I don't fix it.
+
+# Let's try to fix the import dynamically
+try:
+    from backend.scripts.etl.ingest_data import insert_data, init_db
+except ImportError:
+    # Fallback if running from within scripts folder
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'etl'))
+    from ingest_data import insert_data, init_db
+
+"""
+Script: seed.py
+Description: 
+    Seeds the Postgres database from the FULL production SQLite dump (spotify.sqlite).
+    It streams data in chunks to handle the massive 5GB+ dataset without running out of memory.
+    
+    It performs a complex JOIN on tracks, artists, and audio_features.
+
+Usage:
+    This is the "Heavy" seeder. 
+    For quick development, use `dev_seed.py` instead.
+"""
 
 # Configuration
 SQLITE_DB_PATH = "spotify.sqlite"
