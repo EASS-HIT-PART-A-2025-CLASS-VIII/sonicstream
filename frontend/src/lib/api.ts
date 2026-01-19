@@ -31,6 +31,26 @@ export interface SimilarTrack extends Track {
     similarity: number;
 }
 
+// ==================== ALBUM TYPES ====================
+
+export interface Album {
+    id: string;
+    name: string;
+    artist: string;
+    popularity: number | null;
+    cover_url: string | null;
+}
+
+export interface AlbumListResponse {
+    albums: Album[];
+    total: number;
+}
+
+export interface SimilarAlbum extends Album {
+    similarity: number;
+    reason: string | null;
+}
+
 class ApiClient {
     private baseUrl: string;
 
@@ -54,6 +74,8 @@ class ApiClient {
         return response.json();
     }
 
+    // ==================== TRACK METHODS ====================
+
     async getTracks(page: number = 0, pageSize: number = 20): Promise<TrackListResponse> {
         return this.fetch<TrackListResponse>(`/tracks?page=${page}&page_size=${pageSize}`);
     }
@@ -76,6 +98,31 @@ class ApiClient {
         return this.fetch<SimilarTrack[]>(`/tracks/${id}/similar?limit=${limit}`);
     }
 
+    // ==================== ALBUM METHODS ====================
+
+    async getAlbums(page: number = 0, pageSize: number = 20): Promise<AlbumListResponse> {
+        return this.fetch<AlbumListResponse>(`/albums?page=${page}&page_size=${pageSize}`);
+    }
+
+    async searchAlbums(query: string, page: number = 0, pageSize: number = 20): Promise<AlbumListResponse> {
+        return this.fetch<AlbumListResponse>(
+            `/albums/search?q=${encodeURIComponent(query)}&page=${page}&page_size=${pageSize}`
+        );
+    }
+
+    async getAlbum(id: string): Promise<Album> {
+        return this.fetch<Album>(`/albums/${id}`);
+    }
+
+    async getAlbumRecommendations(albumId: string, limit: number = 10): Promise<SimilarAlbum[]> {
+        return this.fetch<SimilarAlbum[]>('/albums/recommend', {
+            method: 'POST',
+            body: JSON.stringify({ album_id: albumId, limit }),
+        });
+    }
+
+    // ==================== HEALTH ====================
+
     async healthCheck(): Promise<{ status: string }> {
         return this.fetch<{ status: string }>('/health');
     }
@@ -83,3 +130,4 @@ class ApiClient {
 
 export const api = new ApiClient();
 export default api;
+

@@ -20,8 +20,7 @@ class TrackBase(BaseModel):
     speechiness: Optional[float] = None
     loudness: Optional[float] = None
     
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 class TrackResponse(TrackBase):
     cover_url: Optional[str] = None
