@@ -31,7 +31,7 @@ def row_to_track(row) -> dict:
         "id": str(row.track_id) if hasattr(row, 'track_id') else "",
         "name": row.name if hasattr(row, 'name') else "Unknown",
         "artist": row.artist if hasattr(row, 'artist') else "Unknown",
-        "album": row.album_id if hasattr(row, 'album_id') else None,
+        "album": row.album if hasattr(row, 'album') else None,
         "popularity": row.popularity if hasattr(row, 'popularity') else 0,
         "score": float(row.score) if hasattr(row, 'score') and row.score else None,
         "reason": None
@@ -51,7 +51,7 @@ async def get_tracks_selection(
     
     result = db.execute(
         text("""
-            SELECT track_id, name, artist, album_id, popularity
+            SELECT track_id, name, artist, album, popularity
             FROM tracks
             ORDER BY popularity DESC NULLS LAST
             LIMIT :limit OFFSET :offset
@@ -120,7 +120,7 @@ async def get_track_recommendations(
     result = db.execute(
         text(f"""
             SELECT 
-                track_id,name,artist,album_id,popularity,
+                track_id,name,artist,album,popularity,
                 -- Audio similarity (inverted L2 distance)
                 1.0 / (1.0 + (audio_embedding <-> '{avg_embedding}'::vector)) as score
             FROM tracks

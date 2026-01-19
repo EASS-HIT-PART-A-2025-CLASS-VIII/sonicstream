@@ -4,12 +4,12 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { AuthProvider } from '@/lib/AuthContext';
 import { PlayerProvider } from '@/lib/usePlayer';
-import YouTubePlayerModal from '@/components/player/YouTubePlayerModal';
+import BottomPlayer from '@/components/player/BottomPlayer';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Music Discovery Platform',
+  title: 'SonicStream',
   description: 'AI-Powered Music Recommendations',
 };
 
@@ -20,11 +20,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={cn(inter.className, "bg-background text-foreground min-h-screen antialiased")}>
+      <body className={cn(inter.className, "bg-background text-foreground min-h-screen antialiased pb-24")}>
         <AuthProvider>
           <PlayerProvider>
             {children}
-            <YouTubePlayerModal />
+            <BottomPlayer />
           </PlayerProvider>
         </AuthProvider>
       </body>
